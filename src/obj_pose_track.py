@@ -4,6 +4,7 @@ import torch
 import json
 import cv2
 import sys
+import re
 import numpy as np
 import multiprocessing as mp
 from typing import List
@@ -23,18 +24,28 @@ if foundationpose_path not in sys.path:
     sys.path.append(foundationpose_path)
 
 
-def get_sorted_frame_list(dir: str) -> List:
+def get_sorted_frame_list(dir: str) -> List[str]:
     files = os.listdir(dir)
     if not files:
         return []
-    files = [f for f in files if f.endswith('.jpg') or f.endswith('.png')]
+    
+    # 只保留 jpg 和 png 文件
+    files = [f for f in files if f.endswith('.jpg') or f.endswith('.png') or f.endswith('.npz')]
     if not files:
         return []
-    if files[0].count('.') == 1:
-        files.sort(key=lambda x: int(x.split('.')[0]))
-    elif files[0].count('.') == 2:
-        files.sort(key=lambda x: int(x.split('.')[0] + x.split('.')[1]))
+    
+    # 使用正则表达式提取文件名中的数字部分
+    def extract_number(filename):
+        match = re.search(r'\d+', filename)  # 匹配文件名中的第一个数字
+        return int(match.group()) if match else float('inf')  # 没找到数字的文件排最后
+    
+    # 按提取的数字排序
+    files.sort(key=extract_number)
+
     return files
+        
+    
+   
 
 
 def adjust_pose_to_image_point(
@@ -276,8 +287,10 @@ def pose_track(
     #################################################
     frame_color_list = get_sorted_frame_list(rgb_seq_path)
     frame_depth_list = get_sorted_frame_list(depth_seq_path)
-    if not frame_color_list or not frame_depth_list:
+    if not frame_color_list :
         print(f"No RGB frames found.")
+    if not frame_depth_list:
+        print(f"No Depth frames found.")    
         return
 
     #################################################
@@ -366,10 +379,16 @@ def pose_track(
         #################################################
         frame_color_filename = frame_color_list[i]
         frame_depth_filename = frame_depth_list[i]
+
         color = imageio.imread(os.path.join(rgb_seq_path, frame_color_filename))[..., :3]
         color = cv2.resize(color, (color.shape[1], color.shape[0]), interpolation=cv2.INTER_NEAREST)
 
-        depth = cv2.imread(os.path.join(depth_seq_path, frame_depth_filename), -1) / 1e3
+        if frame_depth_filename.endswith('.npz'):
+            depth = np.load(os.path.join(depth_seq_path, frame_depth_filename))
+
+        else: 
+            depth = cv2.imread(os.path.join(depth_seq_path, frame_depth_filename), -1) / 1e3
+        
         depth = cv2.resize(depth, (depth.shape[1], depth.shape[0]), interpolation=cv2.INTER_NEAREST)
         depth[(depth < 0.001) | (depth >= np.inf)] = 0
 
