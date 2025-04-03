@@ -14,7 +14,7 @@ Build FoundationPose
 git clone https://github.com/teal024/FoundationPose-plus-plus
 
 # Export project root as the dir of the repo
-export PROJECT_ROOT=/root/FoundationPose-plus-plus
+export PROJECT_ROOT=/home/answer12_as/foundationpose/FoundationPose-plus-plus
 
 # Download FoundationPose weights to $PROJECT_ROOT/FoundationPose/weights
 from Google Drive: https://drive.google.com/drive/folders/1DFezOAD0oD1BblsXVxqDsl8fj0qzB82i
