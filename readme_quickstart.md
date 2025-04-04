@@ -63,19 +63,19 @@ After successfully running, you will find the results in $PROJECT_ROOT/$TESTCASE
 ## 参数说明
 
 ```--rgb_seq_path```              
-type=str, default="/workspace/yanwenhao/detection/test_case2/color"  
+
 
 ```--depth_seq_path ```  
-          type=str, default="/workspace/yanwenhao/detection/test_case2/depth"  
+
 
 ```--mesh_path```           
-       type=str, default="/workspace/yanwenhao/detection/test_case2/mesh/1x4.stl"  
+       type=str, .stl/.obj
 
 ```--init_mask_path```  
-           type=str, default="/workspace/yanwenhao/detection/FoundationPose++/masks/0_m.jpg"  
+  
 
 ```--pose_output_path```  
-        type=str, default="/workspace/yanwenhao/detection/FoundationPose++/pose.npy"  
+        type=str, default="pose.npy"  
 
 ```--mask_visualization_path```  
    type=str, default="/workspace/yanwenhao/detection/FoundationPose++/masks_visualization"  
@@ -132,40 +132,7 @@ type=str, default="/workspace/yanwenhao/detection/test_case2/color"
 This process is to get the mask of the first frame, to help FoundationPose better locate the object during tracking. We use a 2-stage method (Qwen-VL + SAM-HQ) as an example to extract the mask, you can use any other tools to get the mask.
 
 
-#### Use Qwen-VL to extract the bounding box [OPTIONAL]
 
-We use Qwen-VL to extract the bounding box, you can use any other tools to get it or directly provide bounding box area without running QwenVL using commands like `BOUNDING_BOX_POSITION=[640, 419, 190, 37]`. 
-
-```
-# start Qwen-VL webapi
-cd $PROJECT_ROOT
-python src/WebAPI/qwen2_vl_api.py --weight_path $PROJECT_ROOT/Qwen2-VL/weights &
-
-# use Qwen-VL to get the bbox of the object
-cd $PROJECT_ROOT
-BOUNDING_BOX_POSITION=$(python src/utils/obj_bbox.py \
-    --frame_path $PROJECT_ROOT/$TESTCASE/color/0.png \
-    --visualize_path $PROJECT_ROOT/$TESTCASE/0_bbox.png \
-    --object_name $DESCRIPTION_OF_THE_OBJECT \
-    --reference_img_path $PATH_OF_REFERENCE_IMAGE)
-```
-
-#### Use SAM-HQ to extract the mask [OPTIONAL]
-We use SAM-HQ to extract the mask, you can use any other tools to get it or directly provide it in the path of `$PROJECT_ROOT/$TESTCASE/0_mask.png`. 
-```
-# start SAM webapi
-python src/WebAPI/hq_sam_api.py --checkpoint_path $PROJECT_ROOT/sam-hq/pretrained_checkpoints/sam_hq_vit_h.pth &
-
-# get the mask of object in the first frame
-python src/utils/obj_mask.py  \
-    --frame_path $PROJECT_ROOT/$TESTCASE/color/0.png \
-    --bbox_xywh "$BOUNDING_BOX_POSITION" \
-    --output_mask_path $PROJECT_ROOT/$TESTCASE/0_mask.png
-```
-
-`$DESCRIPTION_OF_THE_OBJECT`: the description of an object to help QwenVL anchor box positions, better in Chinese.
-
-`$PATH_OF_REFERENCE_IMAGE`: you can provide what the object looks like to help QwenVL anchor box positions more precisely.
 
 ### 6D Pose Track Inference
 Run the following script to track 6D Pose, the results will be visualized in `$PROJECT_ROOT/pose_visualization`.
