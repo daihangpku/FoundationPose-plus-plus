@@ -11,7 +11,7 @@ _links = [
 ]
 
 def download_models_if_needed() -> str:
-    weight_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'weights')
+    weight_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..', 'checkpoints')
     os.makedirs(weight_dir, exist_ok=True)
     for link, md5 in _links:
         # download file if not exists with a progressbar

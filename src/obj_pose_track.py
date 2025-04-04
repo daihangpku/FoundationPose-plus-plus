@@ -363,7 +363,7 @@ def pose_track(
         scorer=scorer,
         refiner=refiner,
         glctx=glctx,
-        debug=2,
+        debug=args.debug,
     )
     logging.info("Estimator initialization done")
 
@@ -551,6 +551,7 @@ if __name__ == "__main__":
     parser.add_argument("--apply_scale", type=float, default=0.01, help="Mesh scale factor in meters (1.0 means no scaling), commonly use 0.01")
     parser.add_argument("--force_apply_color", action='store_true', help="force a color for colorless mesh")
     parser.add_argument("--apply_color", type=json.loads, default="[0, 159, 237]", help="RGB color to apply, in format 'r,g,b'. Only effective if force_apply_color")
+    parser.add_argument("--debug", type=int, default=0, help="debug level")
     args = parser.parse_args()
 
     pose_track(
