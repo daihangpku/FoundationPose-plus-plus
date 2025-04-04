@@ -263,7 +263,7 @@ def pose_track(
         depth_seq_path: str,
         mesh_path: str,
         init_mask_path: str,
-        cam_K: np.ndarray,
+        cam_K_txt: str,
         pose_output_path: str,
         mask_visualization_path: str,
         bbox_visualization_path: str,
@@ -322,6 +322,21 @@ def pose_track(
 
     to_origin, extents = trimesh.bounds.oriented_bounds(mesh)
     bbox = np.stack([-extents / 2, extents / 2], axis=0).reshape(2, 3)
+
+    #################################################
+    # Read the camera intrinsic matrix
+    #################################################
+
+  # 读取 cam_K.txt 文件（如果提供）
+    if args.cam_K_txt is not None:
+        if os.path.exists(args.cam_K_txt):
+            with open(args.cam_K_txt, "r") as f:
+                cam_K = np.loadtxt(f)
+                
+        else:
+            raise FileNotFoundError(f"Camera intrinsic file {args.cam_K_txt} not found.")
+
+
 
     #################################################
     # Instantiate the 6D pose estimator
@@ -527,7 +542,7 @@ if __name__ == "__main__":
     parser.add_argument("--mask_visualization_path", type=str, default="/workspace/yanwenhao/detection/FoundationPose++/masks_visualization")
     parser.add_argument("--bbox_visualization_path", type=str, default="/workspace/yanwenhao/detection/FoundationPose++/bbox_visualization")
     parser.add_argument("--pose_visualization_path", type=str, default="/workspace/yanwenhao/detection/FoundationPose++/pose_visualization")
-    parser.add_argument("--cam_K", type=json.loads, default="[[912.7279052734375, 0.0, 667.5955200195312], [0.0, 911.0028076171875, 360.5406799316406], [0.0, 0.0, 1.0]]", help="Camera intrinsic parameters")
+    parser.add_argument("--cam_K_txt", type=str, default="/workspace/yanwenhao/detection/test_case2/cam_K.txt", help=" the camera intrinsic matrix")
     parser.add_argument("--est_refine_iter", type=int, default=10, help="FoundationPose initial refine iterations, see https://github.com/NVlabs/FoundationPose")
     parser.add_argument("--track_refine_iter", type=int, default=5, help="FoundationPose tracking refine iterations, see https://github.com/NVlabs/FoundationPose")
     parser.add_argument("--activate_2d_tracker", action='store_true', help="activate 2d tracker")
@@ -543,7 +558,7 @@ if __name__ == "__main__":
         args.depth_seq_path,
         args.mesh_path,
         args.init_mask_path,
-        np.array(args.cam_K),
+        args.cam_K_txt,
         args.pose_output_path,
         args.mask_visualization_path,
         args.bbox_visualization_path,

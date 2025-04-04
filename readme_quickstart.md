@@ -86,8 +86,8 @@ type=str, default="/workspace/yanwenhao/detection/test_case2/color"
 ```--pose_visualization_path```  
   type=str, default="/workspace/yanwenhao/detection/FoundationPose++/pose_visualization"  
 
-```--cam_K```  
-                    type=json.loads, default="[[912.7279052734375, 0.0, 667.5955200195312], [0.0, 911.0028076171875, 360.5406799316406], [0.0, 0.0, 1.0]]"  
+```--cam_K_txt```  
+                    type=str, default="/workspace/yanwenhao/detection/test_case2/cam_K.txt" (txtfile) 
                            **Camera intrinsic parameters**
 
 ```--est_refine_iter```  
