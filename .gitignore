@@ -1,6 +1,5 @@
 *.pyc
 *.pth
-FoundationPose/bundlesdf/mycuda/
 FoundationPose/mycpp/build/
 FoundationPose/weights/
 Qwen2-VL/weights/
