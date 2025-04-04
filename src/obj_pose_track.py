@@ -29,7 +29,7 @@ def get_sorted_frame_list(dir: str) -> List[str]:
     if not files:
         return []
     
-    # 只保留 jpg 和 png 文件
+    # 只保留 jpg 和 png ,npz文件
     files = [f for f in files if f.endswith('.jpg') or f.endswith('.png') or f.endswith('.npz')]
     if not files:
         return []
@@ -348,6 +348,7 @@ def pose_track(
         scorer=scorer,
         refiner=refiner,
         glctx=glctx,
+        debug=2,
     )
     logging.info("Estimator initialization done")
 
@@ -384,7 +385,8 @@ def pose_track(
         color = cv2.resize(color, (color.shape[1], color.shape[0]), interpolation=cv2.INTER_NEAREST)
 
         if frame_depth_filename.endswith('.npz'):
-            depth = np.load(os.path.join(depth_seq_path, frame_depth_filename))
+            depth = np.load(os.path.join(depth_seq_path, frame_depth_filename))["depth"]
+           
 
         else: 
             depth = cv2.imread(os.path.join(depth_seq_path, frame_depth_filename), -1) / 1e3
@@ -399,10 +401,12 @@ def pose_track(
         #################################################
         # 6D pose tracking
         #################################################
+        
 
         if i == 0:
             mask = init_mask.astype(np.uint8) * 255
             pose = est.register(K=cam_K, rgb=color, depth=depth, ob_mask=mask, iteration=est_refine_iter)
+            
             if activate_kalman_filter:
                 kf_mean, kf_covariance = kf.initiate(get_6d_pose_arr_from_mat(pose))
 
@@ -464,6 +468,7 @@ def pose_track(
             # depth_colored = cv2.applyColorMap(depth_8bit, cv2.COLORMAP_JET)
 
             center_pose = pose @ np.linalg.inv(to_origin)
+            
             vis_color = draw_posed_3d_box(cam_K, img=color, ob_in_cam=center_pose, bbox=bbox)
             vis_color = draw_xyz_axis(
                 vis_color,

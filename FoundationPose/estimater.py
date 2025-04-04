@@ -42,6 +42,7 @@ class FoundationPose:
 
 
   def reset_object(self, model_pts, model_normals, symmetry_tfs=None, mesh=None):
+    import ipdb
     max_xyz = mesh.vertices.max(axis=0)
     min_xyz = mesh.vertices.min(axis=0)
     self.model_center = (min_xyz+max_xyz)/2
@@ -51,7 +52,8 @@ class FoundationPose:
       mesh.vertices = mesh.vertices - self.model_center.reshape(1,3)
 
     model_pts = mesh.vertices
-    self.diameter = compute_mesh_diameter(model_pts=mesh.vertices, n_sample=10000)
+    #ipdb.set_trace()
+    self.diameter = compute_mesh_diameter(model_pts=mesh.vertices, n_sample=1000)####
     self.vox_size = max(self.diameter/20.0, 0.003)
     logging.info(f'self.diameter:{self.diameter}, vox_size:{self.vox_size}')
     self.dist_bin = self.vox_size/2
