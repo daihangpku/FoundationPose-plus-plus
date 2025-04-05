@@ -262,7 +262,7 @@ def pose_track(
         rgb_seq_path: str,
         depth_seq_path: str,
         mesh_path: str,
-        init_mask_path: str,
+        mask_seq_path: str,
         cam_K_txt: str,
         pose_output_path: str,
         mask_visualization_path: str,
@@ -276,9 +276,10 @@ def pose_track(
     #################################################
     # Read the initial mask
     #################################################
-    init_mask = cv2.imread(init_mask_path, cv2.IMREAD_GRAYSCALE)
+    frame_mask_list = get_sorted_frame_list(mask_seq_path)
+    init_mask = cv2.imread(os.path.join(mask_seq_path, frame_mask_list[0]), cv2.IMREAD_GRAYSCALE)
     if init_mask is None:
-        print(f"Failed to read mask file {init_mask_path}.")
+        print(f"Failed to read mask file {mask_seq_path}.")
         return
     init_mask = init_mask.astype(bool)
 
@@ -321,8 +322,8 @@ def pose_track(
         mesh = trimesh_add_pure_colored_texture(mesh, color=np.array(args.apply_color), resolution=10)
 
     to_origin, extents = trimesh.bounds.oriented_bounds(mesh)
-    bbox = np.stack([-extents / 2, extents / 2], axis=0).reshape(2, 3)
-
+    #bbox = np.stack([-extents / 2, extents / 2], axis=0).reshape(2, 3)
+    bbox = mesh.bounds
     #################################################
     # Read the camera intrinsic matrix
     #################################################
@@ -364,6 +365,7 @@ def pose_track(
         refiner=refiner,
         glctx=glctx,
         debug=args.debug,
+        debug_dir=args.debug_dir,
     )
     logging.info("Estimator initialization done")
 
@@ -401,8 +403,6 @@ def pose_track(
 
         if frame_depth_filename.endswith('.npz'):
             depth = np.load(os.path.join(depth_seq_path, frame_depth_filename))["depth"]
-           
-
         else: 
             depth = cv2.imread(os.path.join(depth_seq_path, frame_depth_filename), -1) / 1e3
         
@@ -482,7 +482,7 @@ def pose_track(
             # depth_8bit = depth_normalized.astype(np.uint8)
             # depth_colored = cv2.applyColorMap(depth_8bit, cv2.COLORMAP_JET)
 
-            center_pose = pose @ np.linalg.inv(to_origin)
+            center_pose = pose #@ np.linalg.inv(to_origin)
             
             vis_color = draw_posed_3d_box(cam_K, img=color, ob_in_cam=center_pose, bbox=bbox)
             vis_color = draw_xyz_axis(
@@ -525,7 +525,10 @@ def pose_track(
     np.save(
         pose_output_path, pose_seq_array
     )
-
+    if args.debug >= 1:
+        os.makedirs(os.path.join(args.debug_dir, "ob_in_cam"), exist_ok=True)
+        for i, pose in enumerate(pose_seq):
+            np.savetxt(f'{args.debug_dir}/ob_in_cam/{i}.txt', pose.reshape(4,4))
     # Clear GPU memory
     torch.cuda.empty_cache()
 
@@ -536,12 +539,12 @@ if __name__ == "__main__":
 
     parser.add_argument("--rgb_seq_path", type=str, default="/workspace/yanwenhao/detection/test_case2/color")
     parser.add_argument("--depth_seq_path", type=str, default="/workspace/yanwenhao/detection/test_case2/depth")
-    parser.add_argument("--mesh_path", type=str, default="/workspace/yanwenhao/detection/test_case2/mesh/1x4.stl")
-    parser.add_argument("--init_mask_path", type=str, default="/workspace/yanwenhao/detection/FoundationPose++/masks/0_m.jpg")
+    parser.add_argument("--mesh_path", type=str, required=True)
+    parser.add_argument("--mask_seq_path", type=str, default="")
     parser.add_argument("--pose_output_path", type=str, default="/workspace/yanwenhao/detection/FoundationPose++/pose.npy")
-    parser.add_argument("--mask_visualization_path", type=str, default="/workspace/yanwenhao/detection/FoundationPose++/masks_visualization")
-    parser.add_argument("--bbox_visualization_path", type=str, default="/workspace/yanwenhao/detection/FoundationPose++/bbox_visualization")
-    parser.add_argument("--pose_visualization_path", type=str, default="/workspace/yanwenhao/detection/FoundationPose++/pose_visualization")
+    parser.add_argument("--mask_visualization_path", type=str, default="")
+    parser.add_argument("--bbox_visualization_path", type=str, default="")
+    parser.add_argument("--pose_visualization_path", type=str, default="")
     parser.add_argument("--cam_K_txt", type=str, default="/workspace/yanwenhao/detection/test_case2/cam_K.txt", help=" the camera intrinsic matrix")
     parser.add_argument("--est_refine_iter", type=int, default=10, help="FoundationPose initial refine iterations, see https://github.com/NVlabs/FoundationPose")
     parser.add_argument("--track_refine_iter", type=int, default=5, help="FoundationPose tracking refine iterations, see https://github.com/NVlabs/FoundationPose")
@@ -552,13 +555,19 @@ if __name__ == "__main__":
     parser.add_argument("--force_apply_color", action='store_true', help="force a color for colorless mesh")
     parser.add_argument("--apply_color", type=json.loads, default="[0, 159, 237]", help="RGB color to apply, in format 'r,g,b'. Only effective if force_apply_color")
     parser.add_argument("--debug", type=int, default=0, help="debug level")
+    parser.add_argument("--output_dir", type=str, default=None, help="output_dir")
+    parser.add_argument("--debug_dir", type=str, default="", help="debug_dir")
     args = parser.parse_args()
-
+    if args.output_dir is not None:
+        args.mask_visualization_path = os.path.join(args.output_dir, "masks_visualization")
+        args.bbox_visualization_path = os.path.join(args.output_dir, "bbox_visualization")
+        args.pose_visualization_path = os.path.join(args.output_dir, "pose_visualization")
+        args.pose_output_path = os.path.join(args.output_dir, "pose.npy")
     pose_track(
         args.rgb_seq_path,
         args.depth_seq_path,
         args.mesh_path,
-        args.init_mask_path,
+        args.mask_seq_path,
         args.cam_K_txt,
         args.pose_output_path,
         args.mask_visualization_path,
