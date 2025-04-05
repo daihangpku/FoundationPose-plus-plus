@@ -353,8 +353,8 @@ def pose_track(
     )
     import logging
 
-    scorer = ScorePredictor()
-    refiner = PoseRefinePredictor()
+    scorer = ScorePredictor(ckpt= "../../../../../checkpoints/FoundationPose")
+    refiner = PoseRefinePredictor(ckpt= "../../../../../checkpoints/FoundationPose")
     glctx = dr.RasterizeCudaContext()
     est = FoundationPose(
         model_pts=mesh.vertices,
